@@ -387,7 +387,7 @@ class AttachmentTest < Test::Unit::TestCase
       assert_equal "50x50#", @attachment.options.styles[:thumb][:geometry]
     end
   end
-  
+
   context "An attachment with conditional :styles that is a proc" do
     setup do
       rebuild_model :styles => lambda{ |attachment| attachment.instance.other == 'a' ? {:thumb => "50x50#"} : {:large => "400x400"} }
@@ -400,7 +400,7 @@ class AttachmentTest < Test::Unit::TestCase
       assert_nil @dummy.avatar.options.styles[:large]
 
       @dummy.other = 'b'
-      
+
       assert_equal "400x400", @dummy.avatar.options.styles[:large][:geometry]
       assert_nil @dummy.avatar.options.styles[:thumb]
     end
@@ -552,12 +552,12 @@ class AttachmentTest < Test::Unit::TestCase
     rebuild_model :storage => :FileSystem
     @dummy = Dummy.new
     assert @dummy.avatar.is_a?(Paperclip::Storage::Filesystem)
-    
+
     rebuild_model :storage => :Filesystem
     @dummy = Dummy.new
     assert @dummy.avatar.is_a?(Paperclip::Storage::Filesystem)
   end
-  
+
   should "convert underscored storage name to camelcase" do
     rebuild_model :storage => :not_here
     @dummy = Dummy.new
@@ -831,7 +831,7 @@ class AttachmentTest < Test::Unit::TestCase
 
       should "return the proper path when filename has multiple .'s" do
         @attachment.stubs(:instance_read).with(:file_name).returns("5k.old.png")
-        assert_equal File.expand_path("./test/../tmp/avatars/dummies/original/#{@instance.id}/5k.old.png"), File.expand_path(@attachment.path)
+        assert_equal File.expand_path("./test/../tmp/avatars/dummies/original/#{@instance.id}/5kold.png"), File.expand_path(@attachment.path)
       end
 
       context "when expecting three styles" do
@@ -953,7 +953,7 @@ class AttachmentTest < Test::Unit::TestCase
       end
 
       should "returns an escaped version of the URL" do
-        assert_match /\/spaced%20file\.png/, @attachment.url
+        assert_match /\/spacedfile\.png/, @attachment.url
       end
     end
 

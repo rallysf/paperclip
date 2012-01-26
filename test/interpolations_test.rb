@@ -154,7 +154,7 @@ class InterpolationsTest < Test::Unit::TestCase
     attachment.stubs(:original_filename).returns("one")
     assert_equal "one", Paperclip::Interpolations.filename(attachment, :style)
   end
-  
+
   should "return the basename when the extension contains regexp special characters" do
     attachment = mock
     attachment.stubs(:styles).returns({})
@@ -198,5 +198,11 @@ class InterpolationsTest < Test::Unit::TestCase
     Paperclip::Interpolations.expects(:notreal).never
     value = Paperclip::Interpolations.interpolate(":notreal/:id/:attachment", :attachment, :style)
     assert_equal ":notreal/1234/attachments", value
+  end
+
+  should "remove non-alphanumberic characters from file basename" do
+    attachment = mock
+    attachment.expects(:original_filename).returns("one 2@.jpg").times(2)
+    assert_equal "one2", Paperclip::Interpolations.basename(attachment, :style)
   end
 end

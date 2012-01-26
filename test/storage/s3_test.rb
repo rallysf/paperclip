@@ -125,12 +125,12 @@ class S3Test < Test::Unit::TestCase
       @dummy.avatar = File.new(File.join(File.dirname(__FILE__), '..', 'fixtures', 'spaced file.png'), 'rb')
     end
 
-    should "return an unescaped version for path" do
-      assert_match /.+\/spaced file\.png/, @dummy.avatar.path
+    should "return an escaped version for path" do
+      assert_match /.+\/spacedfile\.png/, @dummy.avatar.path
     end
 
     should "return an escaped version for url" do
-      assert_match /.+\/spaced%20file\.png/, @dummy.avatar.url
+      assert_match /.+\/spacedfile\.png/, @dummy.avatar.url
     end
   end
 

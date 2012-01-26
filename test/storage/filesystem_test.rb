@@ -44,12 +44,12 @@ class FileSystemTest < Test::Unit::TestCase
         assert File.exists?(@dummy.avatar.path)
       end
 
-      should "store the path unescaped" do
-        assert_match /\/spaced file\.png/, @dummy.avatar.path
+      should "store the path escaped" do
+        assert_match /\/spacedfile\.png/, @dummy.avatar.path
       end
 
       should "return an escaped version of URL" do
-        assert_match /\/spaced%20file\.png/, @dummy.avatar.url
+        assert_match /\/spacedfile\.png/, @dummy.avatar.url
       end
     end
   end
