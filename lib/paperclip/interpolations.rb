@@ -36,6 +36,10 @@ module Paperclip
       end
     end
 
+    def self.plural_cache
+      @plural_cache ||= PluralCache.new
+    end
+
     # Returns the filename, the same way as ":basename.:extension" would.
     def filename attachment, style_name
       [ basename(attachment, style_name), extension(attachment, style_name) ].reject(&:blank?).join(".")
@@ -46,7 +50,7 @@ module Paperclip
     # is used in the default :path to ease default specifications.
     RIGHT_HERE = "#{__FILE__.gsub(%r{^\./}, "")}:#{__LINE__ + 3}"
     def url attachment, style_name
-      raise InfiniteInterpolationError if caller.any?{|b| b.index(RIGHT_HERE) }
+      raise Errors::InfiniteInterpolationError if caller.any?{|b| b.index(RIGHT_HERE) }
       attachment.url(style_name, :timestamp => false, :escape => false)
     end
 
@@ -81,25 +85,28 @@ module Paperclip
     # all class names. Calling #class will return the expected class.
     def class attachment = nil, style_name = nil
       return super() if attachment.nil? && style_name.nil?
-      attachment.instance.class.to_s.underscore.pluralize
+      plural_cache.underscore_and_pluralize(attachment.instance.class.to_s)
     end
 
     # Returns the basename of the file. e.g. "file" for "file.jpg"
     def basename attachment, style_name
-      attachment.original_filename.gsub(/#{Regexp.escape(File.extname(attachment.original_filename))}$/, "").gsub(/[^A-Za-z0-9]/, '').strip
+      attachment.original_filename.gsub(/#{Regexp.escape(File.extname(attachment.original_filename))}$/, "").gsub(/[^A-Za-z0-9_]/, "").strip
     end
 
     # Returns the extension of the file. e.g. "jpg" for "file.jpg"
     # If the style has a format defined, it will return the format instead
     # of the actual extension.
     def extension attachment, style_name
-      ((style = attachment.styles[style_name]) && style[:format]) ||
+      ((style = attachment.styles[style_name.to_s.to_sym]) && style[:format]) ||
         File.extname(attachment.original_filename).gsub(/^\.+/, "")
     end
 
-    # Returns an extension based on the content type. e.g. "jpeg" for "image/jpeg".
+    # Returns an extension based on the content type. e.g. "jpeg" for
+    # "image/jpeg". If the style has a specified format, it will override the
+    # content-type detection.
+    #
     # Each mime type generally has multiple extensions associated with it, so
-    # if the extension from teh original filename is one of these extensions,
+    # if the extension from the original filename is one of these extensions,
     # that extension is used, otherwise, the first in the list is used.
     def content_type_extension attachment, style_name
       mime_type = MIME::Types[attachment.content_type]
@@ -110,7 +117,10 @@ module Paperclip
       end
 
       original_extension = extension(attachment, style_name)
-      if extensions_for_mime_type.include? original_extension
+      style = attachment.styles[style_name.to_s.to_sym]
+      if style && style[:format]
+        style[:format].to_s
+      elsif extensions_for_mime_type.include? original_extension
         original_extension
       elsif !extensions_for_mime_type.empty?
         extensions_for_mime_type.first
@@ -137,11 +147,11 @@ module Paperclip
       attachment.fingerprint
     end
 
-    # Returns a the attachment hash.  See Paperclip::Attachment#hash for
+    # Returns a the attachment hash.  See Paperclip::Attachment#hash_key for
     # more details.
     def hash attachment=nil, style_name=nil
       if attachment && style_name
-        attachment.hash(style_name)
+        attachment.hash_key(style_name)
       else
         super()
       end
@@ -150,17 +160,20 @@ module Paperclip
     # Returns the id of the instance in a split path form. e.g. returns
     # 000/001/234 for an id of 1234.
     def id_partition attachment, style_name
-      if (id = attachment.instance.id).is_a?(Integer)
+      case id = attachment.instance.id
+      when Integer
         ("%09d" % id).scan(/\d{3}/).join("/")
-      else
+      when String
         id.scan(/.{3}/).first(3).join("/")
+      else
+        nil
       end
     end
 
     # Returns the pluralized form of the attachment name. e.g.
     # "avatars" for an attachment of :avatar
     def attachment attachment, style_name
-      attachment.name.to_s.downcase.pluralize
+      plural_cache.pluralize(attachment.name.to_s.downcase)
     end
 
     # Returns the style, or the default style if nil is supplied.

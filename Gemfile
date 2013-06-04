@@ -1,21 +1,7 @@
-source "http://rubygems.org"
+source "https://rubygems.org"
 
-gem "activerecord", :require => "active_record"
-gem "appraisal"
-gem "aruba"
-gem "aws-s3", :require => "aws/s3"
-gem "bundler"
-gem "cocaine", "~>0.2"
-gem "fog"
+gemspec
+
 gem "jruby-openssl", :platform => :jruby
-gem "mime-types"
-gem "mocha"
-gem "rake"
-gem "rdoc", :require => false
-gem "capybara"
-gem "cucumber", "~> 1.0.0"
-gem "shoulda"
-gem "sqlite3", "~>1.3.4"
-gem "fakeweb", :require => false
-
-gem 'pry'
+gem "activerecord-jdbcsqlite3-adapter", :platform => :jruby
+gem "sqlite3", :platform => :ruby

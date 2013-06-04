@@ -10,15 +10,14 @@ end
 World(AttachmentHelpers)
 
 When /^I modify my attachment definition to:$/ do |definition|
-  in_current_dir do
-    File.open("app/models/user.rb", "w") do |file|
-      file.write <<-FILE
-        class User < ActiveRecord::Base
-          #{definition}
-        end
-      FILE
+  content = in_current_dir { File.read("app/models/user.rb") }
+  content.gsub!(/has_attached_file.+end/m, <<-FILE)
+      #{definition}
     end
-  end
+  FILE
+
+  write_file "app/models/user.rb", content
+  in_current_dir { FileUtils.rm_rf ".rbx" }
 end
 
 When /^I upload the fixture "([^"]*)"$/ do |filename|
@@ -54,6 +53,13 @@ Then /^the attachment should have the same content type as the fixture "([^"]*)"
   end
 end
 
+Then /^the attachment should have the same file name as the fixture "([^"]*)"$/ do |filename|
+  in_current_dir do
+    attachment_file_name = `bundle exec #{runner_command} "puts User.last.attachment_file_name"`.strip
+    attachment_file_name.should == File.name(fixture_path(filename)).to_s
+  end
+end
+
 Then /^the attachment should have the same file size as the fixture "([^"]*)"$/ do |filename|
   in_current_dir do
     attachment_file_size = `bundle exec #{runner_command} "puts User.last.attachment_file_size"`.strip
@@ -64,5 +70,33 @@ end
 Then /^the attachment file "([^"]*)" should (not )?exist$/ do |filename, not_exist|
   in_current_dir do
     check_file_presence([attachment_path(filename)], !not_exist)
+  end
+end
+
+Then /^I should have attachment columns for "([^"]*)"$/ do |attachment_name|
+  in_current_dir do
+    columns = eval(`bundle exec #{runner_command} "puts User.columns.map{ |column| [column.name, column.type] }.inspect"`.strip)
+    expect_columns = [
+      ["#{attachment_name}_file_name", :string],
+      ["#{attachment_name}_content_type", :string],
+      ["#{attachment_name}_file_size", :integer],
+      ["#{attachment_name}_updated_at", :datetime]
+    ]
+
+    expect_columns.all?{ |column| columns.include? column }.should be_true
+  end
+end
+
+Then /^I should not have attachment columns for "([^"]*)"$/ do |attachment_name|
+  in_current_dir do
+    columns = eval(`bundle exec #{runner_command} "puts User.columns.map{ |column| [column.name, column.type] }.inspect"`.strip)
+    expect_columns = [
+      ["#{attachment_name}_file_name", :string],
+      ["#{attachment_name}_content_type", :string],
+      ["#{attachment_name}_file_size", :integer],
+      ["#{attachment_name}_updated_at", :datetime]
+    ]
+
+    expect_columns.none?{ |column| columns.include? column }.should be_true
   end
 end
